@@ -72,4 +72,4 @@ jobs:
           JWT_SECRET_KEY: ci-jwt-secret-key-32-chars-minimum
           WEBHOOK_SECRET: ci-webhook-secret-key-32-chars-ok
         run: |
-          python -m pytest tests/ -v -ra --tb=short
+          python -m pytest tests/ -v -ra --tb=short 2>&1 | tee /tmp/pytest.log || { echo "### Pytest Failure Output" >> $GITHUB_STEP_SUMMARY; echo '```' >> $GITHUB_STEP_SUMMARY; cat /tmp/pytest.log >> $GITHUB_STEP_SUMMARY; echo '```' >> $GITHUB_STEP_SUMMARY; exit 1; }

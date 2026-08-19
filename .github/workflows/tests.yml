@@ -65,10 +65,11 @@ jobs:
       - name: Run Full Pytest Suite (PostgreSQL backend)
         env:
           FLASK_ENV: testing
-          # TEST_DATABASE_URL routes TestingConfig to PostgreSQL in CI
+          # Point testing configuration to the PostgreSQL service container
           TEST_DATABASE_URL: "postgresql://habot_ci:habot_ci_password@localhost:5432/habot_lsa_test"
+          DATABASE_URL: "postgresql://habot_ci:habot_ci_password@localhost:5432/habot_lsa_test"
           SECRET_KEY: ci-secret-key-32-chars-minimum-ok
           JWT_SECRET_KEY: ci-jwt-secret-key-32-chars-minimum
           WEBHOOK_SECRET: ci-webhook-secret-key-32-chars-ok
         run: |
-          python -m pytest tests/ -v --tb=short
+          python -m pytest tests/ -v -ra --tb=short

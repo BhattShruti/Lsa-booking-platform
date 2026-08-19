@@ -368,9 +368,10 @@ def test_concurrent_booking_attempts(app, client, booking_fixtures, get_auth_hea
     headers = get_auth_headers(booking_fixtures["parent_id"])
 
     def post_booking():
-        # Running inside threads, creating isolated client requests
+        # Running inside threads with isolated application context and test client
         with app.app_context():
-            resp = client.post("/api/v1/bookings/", json=payload, headers=headers)
+            thread_client = app.test_client()
+            resp = thread_client.post("/api/v1/bookings/", json=payload, headers=headers)
             results.put(resp.status_code)
 
     # Spawn 2 concurrent request threads

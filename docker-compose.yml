@@ -1,0 +1,70 @@
+services:
+
+  # ── PostgreSQL Database ──────────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-habot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-habot_lsa_booking}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - habot_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-habot} -d ${POSTGRES_DB:-habot_lsa_booking}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Flask/Gunicorn Web Application ──────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Flask configuration
+      FLASK_APP: run.py
+      FLASK_ENV: ${FLASK_ENV:-production}
+
+      # Database — connects to the 'db' service using the Docker internal network
+      DATABASE_URL: postgresql://${POSTGRES_USER:-habot}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@db:5432/${POSTGRES_DB:-habot_lsa_booking}
+
+      # Application secrets — MUST be set via .env; no defaults here for security
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY must be set in .env}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET must be set in .env}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+      # Mock payment gateway — points to the web service's own port in Docker network
+      MOCK_PAYMENT_URL: ${MOCK_PAYMENT_URL:-http://web:5000/api/v1/mock-payment-gateway/charge}
+
+      # Gunicorn tuning (optional overrides)
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
+    ports:
+      - "${APP_PORT:-5000}:5000"
+    networks:
+      - habot_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  habot_network:
+    driver: bridge

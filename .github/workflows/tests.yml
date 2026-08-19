@@ -1,0 +1,74 @@
+name: Python Backend CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # ── PostgreSQL service container ──────────────────────────────────────────
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: habot_ci
+          POSTGRES_PASSWORD: habot_ci_password
+          POSTGRES_DB: habot_lsa_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U habot_ci -d habot_lsa_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --health-start-period 10s
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U habot_ci; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "PostgreSQL is ready."
+
+      - name: Run Flask-Migrate database migrations
+        env:
+          FLASK_APP: run.py
+          FLASK_ENV: testing
+          # Point Flask-Migrate at the CI PostgreSQL instance
+          TEST_DATABASE_URL: "postgresql://habot_ci:habot_ci_password@localhost:5432/habot_lsa_test"
+          SECRET_KEY: ci-secret-key-32-chars-minimum-ok
+          JWT_SECRET_KEY: ci-jwt-secret-key-32-chars-minimum
+          WEBHOOK_SECRET: ci-webhook-secret-key-32-chars-ok
+        run: |
+          flask db upgrade
+
+      - name: Run Full Pytest Suite (PostgreSQL backend)
+        env:
+          FLASK_ENV: testing
+          # TEST_DATABASE_URL routes TestingConfig to PostgreSQL in CI
+          TEST_DATABASE_URL: "postgresql://habot_ci:habot_ci_password@localhost:5432/habot_lsa_test"
+          SECRET_KEY: ci-secret-key-32-chars-minimum-ok
+          JWT_SECRET_KEY: ci-jwt-secret-key-32-chars-minimum
+          WEBHOOK_SECRET: ci-webhook-secret-key-32-chars-ok
+        run: |
+          python -m pytest tests/ -v --tb=short

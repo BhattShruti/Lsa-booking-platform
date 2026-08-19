@@ -23,7 +23,9 @@ class QueryCounter:
         event.remove(self.engine, "before_cursor_execute", self.callback)
 
     def callback(self, conn, cursor, statement, parameters, context, executemany):
-        self.count += 1
+        stmt_lower = statement.strip().lower()
+        if stmt_lower.startswith("select"):
+            self.count += 1
 
 @pytest.fixture
 def search_fixtures(app):

@@ -115,8 +115,6 @@ class ProductionConfig(Config):
                 "(e.g. postgresql://user:pass@host:5432/db). "
                 f"Got: '{db_url or '(not set)'}'"
             )
-        else:
-            cls.SQLALCHEMY_DATABASE_URI = db_url
 
         for var, attr in [
             ('SECRET_KEY', 'SECRET_KEY'),

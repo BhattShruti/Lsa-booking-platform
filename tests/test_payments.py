@@ -15,6 +15,7 @@ def payment_fixtures(app):
     """Seed data for testing payment gateway services."""
     with app.app_context():
         # Clear existing tables
+        db.session.query(Payment).delete()
         db.session.query(BookingRequest).delete()
         db.session.query(LSAProfile).delete()
         db.session.query(Parent).delete()

@@ -63,6 +63,7 @@ def rate_limited_app():
     with app.app_context():
         _db.create_all()
         yield app
+        _db.session.rollback()
         _db.session.remove()
         _db.drop_all()
 

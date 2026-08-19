@@ -37,10 +37,13 @@ def make_signed_request(payload: dict, secret: str = SECRET, timestamp: int = No
     }
     return sent_body, headers
 
+from app.models.payment import Payment
+
 @pytest.fixture
 def webhook_fixtures(app):
     """Seed Parent, LSA, and a pending Booking for webhook testing."""
     with app.app_context():
+        db.session.query(Payment).delete()
         db.session.query(BookingRequest).delete()
         db.session.query(LSAProfile).delete()
         db.session.query(Parent).delete()

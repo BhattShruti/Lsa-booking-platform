@@ -8,11 +8,13 @@ from app.extensions import db
 from app.models.parent import Parent
 from app.models.lsa import LSAProfile
 from app.models.booking import BookingRequest
+from app.models.payment import Payment
 
 @pytest.fixture
 def booking_fixtures(app):
     """Seed data for booking route integration tests."""
     with app.app_context():
+        db.session.query(Payment).delete()
         db.session.query(BookingRequest).delete()
         db.session.query(LSAProfile).delete()
         db.session.query(Parent).delete()

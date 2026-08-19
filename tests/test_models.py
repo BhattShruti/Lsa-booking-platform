@@ -31,6 +31,7 @@ def test_parent_email_uniqueness(app):
     db.session.add(parent2)
     with pytest.raises(IntegrityError):
         db.session.commit()
+    db.session.rollback()
 
 def test_lsa_creation_and_skills(app):
     """Verify LSA creation and many-to-many skill mapping/back-population."""
@@ -66,6 +67,7 @@ def test_lsa_email_uniqueness(app):
     db.session.add(lsa2)
     with pytest.raises(IntegrityError):
         db.session.commit()
+    db.session.rollback()
 
 def test_skill_name_uniqueness(app):
     """Verify Skill names are strictly unique."""
@@ -77,6 +79,7 @@ def test_skill_name_uniqueness(app):
     db.session.add(skill2)
     with pytest.raises(IntegrityError):
         db.session.commit()
+    db.session.rollback()
 
 def test_booking_creation_and_relations(app):
     """Verify BookingRequest creation, foreign keys, and relationships."""
@@ -128,6 +131,7 @@ def test_booking_chronological_constraint(app):
     # SQLite/PostgreSQL raises an IntegrityError due to CheckConstraint violation
     with pytest.raises(IntegrityError):
         db.session.commit()
+    db.session.rollback()
 
 def test_payment_booking_one_to_one(app):
     """Verify Payment's strict 1-to-1 relationship and constraints with BookingRequest."""
@@ -169,6 +173,7 @@ def test_payment_booking_one_to_one(app):
     db.session.add(duplicate_payment)
     with pytest.raises(IntegrityError):
         db.session.commit()
+    db.session.rollback()
 
 def test_payment_external_id_uniqueness(app):
     """Verify external payment identifiers are globally unique across all payments."""
@@ -203,3 +208,4 @@ def test_payment_external_id_uniqueness(app):
     db.session.add(pay2)
     with pytest.raises(IntegrityError):
         db.session.commit()
+    db.session.rollback()

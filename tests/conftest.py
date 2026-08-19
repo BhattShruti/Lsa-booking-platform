@@ -12,6 +12,7 @@ def app():
         # Prepare test database tables (empty for now)
         db.create_all()
         yield app
+        db.session.rollback()
         db.session.remove()
         db.drop_all()
 

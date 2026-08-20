@@ -6,7 +6,7 @@ mock_gateway_bp = Blueprint("mock_gateway", __name__, url_prefix="/api/v1/mock-p
 def charge():
     """
     Simulated external third-party payment gateway endpoint.
-    Used for local testing and assessment purposes to verify requests integration.
+    Used for local testing and integration verification.
     """
     if not request.is_json:
         return jsonify({"error": "Request body must be a JSON payload"}), 400
